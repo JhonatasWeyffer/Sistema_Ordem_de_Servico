@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS - SISTEMA ORDENS DE SERVIÇO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+     <!--Adicinar Icon Site-->
+    <link rel="icon" href="SOS.png"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0d062a;
+            color: #e6e6e6;
+        }
+        .concrete-bg {
+            background-color: #3a3a3a;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23424242' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .carousel {
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+        }
+        .carousel-item {
+            scroll-snap-align: start;
+            flex: 0 0 auto;
+        }
+        .status-pending {
+            border-left: 4px solid #f59e0b;
+        }
+        .status-progress {
+            border-left: 4px solid #3b82f6;
+        }
+        .status-completed {
+            border-left: 4px solid #10b981;
+        }
+        .status-cancelled {
+            border-left: 4px solid #ef4444;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .checklist-item {
+            transition: all 0.2s ease;
+        }
+        .checklist-item:hover {
+            transform: translateX(5px);
+        }
+        .photo-carousel {
+            position: relative;
+            height: 120px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        .photo-carousel-inner {
+            display: flex;
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .photo-carousel-item {
+            flex: 0 0 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+        .photo-carousel-nav {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+        .photo-carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        .photo-carousel-dot.active {
+            background-color: white;
+        }
+        /* PDF Modal Styles */
+        #pdfModal {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        #pdfContent {
+            background-color: white;
+            color: #333;
+            width: 210mm;
+            max-width: 100%;
+            height: 350mm;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20mm;
+            box-sizing: border-box;
+        }
+        .pdf-header {
+            height: 100px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 10px;
+        }
+        .pdf-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .pdf-subtitle {
+            font-size: 16px;
+            color: #555;
+        }
+        .pdf-section {
+            margin-bottom: 15px;
+        }
+        .pdf-section-title {
+            font-weight: bold;
+            border-bottom: 1px solid #000000;
+            margin-bottom: 5px;
+            padding-bottom: 3px;
+        }
+        .pdf-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+        .pdf-label {
+            width: 120px;
+            font-weight: bold;
+        }
+        .pdf-value {
+            flex: 1;
+        }
+        .pdf-checklist {
+            margin-left: 20px;
+        }
+        .pdf-checklist-item {
+            margin-bottom: 3px;
+            position: relative;
+            padding-left: 15px;
+        }  
+        .pdf-checklist-item:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+        }
+        .pdf-photos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .pdf-photo {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ddd;
+            background-size: cover;
+            background-position: center;
+        }
+        .pdf-footer {
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .pdf-signature {
+            width: 200px;
+            border-top: 1px solid #333;
+            text-align: center;
+            margin-top: 50px;
+        }
+        /* Thermal Print Styles */
+        .thermal-receipt {
+            width: 80mm;
+            background: rgb(240, 235, 235);
+            color: rgb(0, 0, 0);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 5mm;
+            margin: 0 auto;
+            line-height: 1.2;
+        }
+        .thermal-header {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+        }
+        .thermal-info {
+            margin: 3px 0;
+        }
+        .thermal-divider {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+        }
+        .thermal-checklist {
+            margin-left: 5px;
+        }
+        
+        .thermal-checklist-item {
+            margin-bottom: 2px;
+        }
+        .thermal-values {
+            margin-top: 5px;
+        }
+        
+        .thermal-footer {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 10px;
+        }
+
+        /* Print Menu Styles */
+        .print-menu {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .print-menu-btn {
+            background: #73879d4b;
+            color: rgb(124, 21, 21);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        
+        .print-menu-btn:hover {
+            background: #4b5563;
+        }
+        
+        .print-menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: -40px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            width: 220px;
+            overflow: hidden;
+            display: none;
+            z-index: 100;
+        }
+        
+        .print-menu-dropdown.show {
+            display: block;
+        }
+        
+        .print-menu-item {
+            padding: 10px 15px;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .print-menu-item:hover {
+            background: #f0f0f0;
+        }
+        
+        .print-menu-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Custom styles for coupon text */
+        .coupon-text {
+            font-size: 16px !important;
+            font-weight: bold !important;
+            line-height: 1.5 !important;
+            color: black !important;
+        }
+        
+        /* Required field styles */
+        .required-field {
+            border-left: 3px solid #f59e0b !important;
+        }
+        
+        /* Placeholder styles */
+        ::placeholder {
+            color: #a0aec0 !important;
+            opacity: 1 !important;
+        }
+        
+        :-ms-input-placeholder {
+            color: #a0aec0 !important;
+        }
+        
+        ::-ms-input-placeholder {
+            color: #a0aec0 !important;
+        }
+ /* Estilos para impressão */
+@page {
+  size: A3;
+  margin: 0; 
+
+}
+#printPdfBtn {
+  page-break-inside: avoid;
+}
+
+@media print {
+
+    /* Remove qualquer barra de rolagem */
+  * {
+    scrollbar-width: none !important; /* Firefox */
+  }
+
+  *::-webkit-scrollbar {
+    display: none !important; /* Chrome/Safari */
+  }
+  html, body {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  body.printing-pdf * {
+    display: none !important;
+  }
+
+  body.printing-pdf #pdfModal,
+  body.printing-pdf #pdfModal * {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body.printing-pdf #pdfModal {
+    position: static !important;
+    background: white !important;
+    width: 210mm !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  body.printing-pdf #pdfContent {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+}
+
+
+    </style>
+</head>
+<body class="min-h-screen" style="user-select: none;">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex justify-between items-center">
+         <h1 class="text-3xl font-bold text-gray-200 flex flex-col items-center">
+    <div class="flex items-center">
+        <span class="text-amber-500 text-5xl">S</span>  <!-- Aumentado para text-5xl -->
+        <i class="fas fa-laptop mx-3 text-gray-300 text-4xl"></i>  <!-- Aumentado para text-4xl -->
+        <span class="text-amber-500 text-5xl">S</span>  <!-- Aumentado para text-5xl -->
+    </div>
+    <div class="text-xl mt-2">SISTEMA  ORDENS DE SERVIÇOS</div>  <!-- Aumentei um pouco o subtítulo também -->
+</h1>
+                <div class="flex space-x-4">
+                    <button id="newOrderBtn" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Nova Ordem
+                    </button>
+                    <div class="relative">
+                        <select id="monthFilter" class="bg-gray-800 border border-gray-700 text-gray-200 rounded-lg px-4 py-2 appearance-none pr-8">
+                            <option value="all">Todos os meses</option>
+                            <option value="0">Janeiro</option>
+                            <option value="1">Fevereiro</option>
+                            <option value="2">Março</option>
+                            <option value="3">Abril</option>
+                            <option value="4">Maio</option>
+                            <option value="5">Junho</option>
+                            <option value="6">Julho</option>
+                            <option value="7">Agosto</option>
+                            <option value="8">Setembro</option>
+                            <option value="9">Outubro</option>
+                            <option value="10">Novembro</option>
+                            <option value="11">Dezembro</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Active Orders Panel (Only Pending) -->
+        <section class="mb-12">
+            <h2 class="text-xl font-semibold text-gray-300 mb-4 flex items-center">
+                <i class="fas fa-tools mr-2 text-amber-500"></i> Ordens Ativas (Pendentes)
+            </h2>
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div id="activeOrdersCarousel" class="carousel flex overflow-x-auto space-x-6 pb-4">
+                    <!-- Active orders (pending) will be added here by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- New Order Modal -->
+        <div id="newOrderModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+            <div class="bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto concrete-bg shadow-2xl">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-200">Nova Ordem de Serviço</h2>
+                        <button id="closeModalBtn" class="text-gray-400 hover:text-white">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                                                    
+                    <form id="orderForm" class="space-y-6" enctype="multipart/form-data">
+                        <input type="hidden" id="editOrderId">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="clientName" class="block text-gray-300 mb-2">Nome do Cliente *</label>
+                                <input type="text" id="clientName" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" placeholder="Digite o nome completo" required>
+                            </div>
+                            <div>
+                                <label for="whatsapp" class="block text-gray-300 mb-2">Número do WhatsApp *</label>
+                                <input type="tel" id="whatsapp" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" placeholder="(00) 00000-0000" required>
+                            </div>
+                        </div>
+                                                                                    
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="deviceType" class="block text-gray-300 mb-2">Tipo do Aparelho *</label>
+                                <select id="deviceType" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" required>
+                                    <option value="" disabled selected>Selecione o tipo</option>
+                                    <option value="Celular">Celular</option>
+                                    <option value="Tablet">Tablet</option>
+                                    <option value="Computador">Computador</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="brand" class="block text-gray-300 mb-2">Marca *</label>
+                                <input type="text" id="brand" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" placeholder="Ex: Apple, Samsung" required>
+                            </div>
+                            <div>
+                                <label for="model" class="block text-gray-300 mb-2">Modelo *</label>
+                                <input type="text" id="model" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" placeholder="Ex: iPhone 12, Galaxy S21" required>
+                            </div>
+                        </div>
+                                                                                    
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="imei" class="block text-gray-300 mb-2">IMEI/Serial</label>
+                                <input type="text" id="imei" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 " placeholder="Número de série do aparelho">
+                            </div>
+                            <div>
+                                <label for="status" class="block text-gray-300 mb-2">Status</label>
+                                <select id="status" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="pendente">Pendente</option>
+                                <option value="andamento">Em andamento</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+                                                                                    
+                        <div>
+                            <label for="clientReport" class="block text-gray-300 mb-2">Relato do Cliente</label>
+                            <textarea id="clientReport" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Descreva o problema relatado pelo cliente"></textarea>
+                        </div>
+                                                                                    
+                        <div>
+                            <label for="serviceDescription" class="block text-gray-300 mb-2">O que será feito</label>
+                            <textarea id="serviceDescription" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Descreva o serviço que será realizado"></textarea>
+                        </div>
+                                                                                    
+                        <div>
+                            <label for="replacedPart" class="block text-gray-300 mb-2">Peças trocadas</label>
+                            <input type="text" id="replacedPart" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Nome da peça que será substituída">
+                        </div>
+                                                                                    
+                        <!-- Checklist Section -->
+                        <div class="border-t border-gray-700 pt-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold text-gray-300">Checklist</h3>
+                                <button type="button" id="addChecklistItem" class="text-amber-500 hover:text-amber-400 flex items-center">
+                                    <i class="fas fa-plus-circle mr-1"></i> Adicionar Item
+                                </button>
+                            </div>
+                                                                                                                        
+                            <div id="checklistItems" class="space-y-3">
+                                <div class="checklist-item flex items-center">
+                                    <input type="text" placeholder="Ex: Saúde da bateria (ex: 83%)" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="checklist-item flex items-center">
+                                    <input type="text" placeholder="Ex: Câmera frontal OK" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="checklist-item flex items-center">
+                                    <input type="text" placeholder="Ex: Câmera traseira OK" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                                                                                    
+                        <!-- Values Section -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-700 pt-6">
+                            <div>
+                                <label for="partValue" class="block text-gray-300 mb-2">Valor da peça trocada</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-gray-400">R$</span>
+                                    <input type="number" id="partValue" class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-8 pr-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="0,00">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="taxValue" class="block text-gray-300 mb-2">Valor de taxa</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-gray-400">R$</span>
+                                    <input type="number" id="taxValue" class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-8 pr-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="0,00">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="totalValue" class="block text-gray-300 mb-2">Valor total</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 text-gray-400">R$</span>
+                                    <input type="number" id="totalValue" class="w-full bg-gray-700 border border-gray-600 rounded-lg pl-8 pr-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="0,00">
+                                </div>
+                            </div>
+                        </div>
+                                                                                    
+                        <!-- Date Section -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-gray-700 pt-6">
+                            <div>
+                                <label for="entryDay" class="block text-gray-300 mb-2">Dia *</label>
+                                <input type="number" id="entryDay" min="1" max="31" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" placeholder="DD" required>
+                            </div>
+                            <div>
+                                <label for="entryMonth" class="block text-gray-300 mb-2">Mês *</label>
+                                <select id="entryMonth" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" required>
+                                    <option value="" disabled selected>Selecione</option>
+                                    <option value="0">Janeiro</option>
+                                    <option value="1">Fevereiro</option>
+                                    <option value="2">Março</option>
+                                    <option value="3">Abril</option>
+                                    <option value="4">Maio</option>
+                                    <option value="5">Junho</option>
+                                    <option value="6">Julho</option>
+                                    <option value="7">Agosto</option>
+                                    <option value="8">Setembro</option>
+                                    <option value="9">Outubro</option>
+                                    <option value="10">Novembro</option>
+                                    <option value="11">Dezembro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="entryYear" class="block text-gray-300 mb-2">Ano *</label>
+                                <input type="number" id="entryYear" min="2000" max="2100" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 required-field" placeholder="AAAA" required>
+                            </div>
+                        </div>
+                                                             
+                        <!-- Photos Section -->
+                        <div class="border-t border-gray-700 pt-6">
+                            <h3 class="text-lg font-semibold text-gray-300 mb-4">Fotos do Aparelho</h3>
+                            <div class="flex flex-wrap gap-4" id="photosPreview">
+                                <!-- Photo previews will appear here -->
+                            </div>
+                            <div class="mt-4">
+                                <label for="photoUpload" class="cursor-pointer inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors">
+                                    <i class="fas fa-camera mr-2"></i> Adicionar Fotos
+                                    <input type="file" id="photoUpload" class="hidden" accept="image/*" multiple>
+                                </label>
+                            </div>
+                        </div>
+                                                             
+                        <div class="flex justify-end space-x-4 pt-6 border-t border-gray-700">
+                            <button type="button" id="cancelOrderBtn" class="px-6 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors flex items-center">
+                                <i class="fas fa-save mr-2"></i> Salvar Ordem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thermal Print Preview Modal -->
+        <div id="thermalModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+            <div class="bg-white rounded-lg p-4 max-w-full max-h-[90vh] overflow-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold no-print" style="color: #000;" >Pré-visualização de Impressão</h2>
+                    <button id="closeThermalModalBtn" class="text-gray-500 hover:text-red-700" style="font-size: 30px;">
+                        <i class="fas fa-times no-print"></i>
+                    </button>
+                </div>
+                <div id="thermalContent" class="thermal-receipt">
+                    <!-- Thermal print content will be generated here -->
+                </div>
+                <div class="mt-4 flex justify-center space-x-4">
+                    <button id="printThermalBtn" class="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-print mr-2 no-print"></i> Imprimir
+                    </button>
+                    <button id="downloadThermalBtn" class="no-print bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-download mr-2 no-print"></i> Baixar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Modal -->
+        <div id="pdfModal" class="fixed inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center hidden">
+            <div class="relative">
+                <button id="closePdfModalBtn" class="no-print absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center z-50">
+                    <i class="fas fa-times no-print"></i>
+                </button>
+                <div id="pdfContent" class="bg-white mx-auto shadow-xl">
+                    <!-- PDF content will be generated here -->
+                </div>
+                <div class="mt-4 flex justify-center space-x-4">
+                    <button id="downloadPdfBtn" class="no-print bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-download mr-2 no-print"></i> Baixar PDF
+                    </button>
+                    <button id="printPdfBtn" class="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-print mr-2 no-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Catalog (All orders except pending) -->
+        <section>
+            <h2 class="text-xl font-semibold text-gray-300 mb-4 flex items-center">
+                <i class="fas fa-clipboard-list mr-2 text-amber-500"></i> Catálogo de Ordens
+            </h2>
+            <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div id="ordersCarousel" class="carousel flex overflow-x-auto space-x-6 pb-4">
+                    <!-- All orders except pending will be added here by JavaScript -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+     <script>
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Load orders from server
+            let orders = [];
+            
+            // DOM elements
+            const newOrderBtn = document.getElementById('newOrderBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const cancelOrderBtn = document.getElementById('cancelOrderBtn');
+            const newOrderModal = document.getElementById('newOrderModal');
+            const orderForm = document.getElementById('orderForm');
+            const monthFilter = document.getElementById('monthFilter');
+            const activeOrdersCarousel = document.getElementById('activeOrdersCarousel');
+            const ordersCarousel = document.getElementById('ordersCarousel');
+            const addChecklistItem = document.getElementById('addChecklistItem');
+            const checklistItems = document.getElementById('checklistItems');
+            const photoUpload = document.getElementById('photoUpload');
+            const photosPreview = document.getElementById('photosPreview');
+            const entryDay = document.getElementById('entryDay');
+            const entryMonth = document.getElementById('entryMonth');
+            const entryYear = document.getElementById('entryYear');
+            const editOrderId = document.getElementById('editOrderId');
+            const pdfModal = document.getElementById('pdfModal');
+            const pdfContent = document.getElementById('pdfContent');
+            const closePdfModalBtn = document.getElementById('closePdfModalBtn');
+            const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+            const printPdfBtn = document.getElementById('printPdfBtn');
+            const thermalModal = document.getElementById('thermalModal');
+            const thermalContent = document.getElementById('thermalContent');
+            const closeThermalModalBtn = document.getElementById('closeThermalModalBtn');
+            const printThermalBtn = document.getElementById('printThermalBtn');
+            const downloadThermalBtn = document.getElementById('downloadThermalBtn');
+            const saveOrderBtn = orderForm.querySelector('button[type="submit"]');
+
+            let isSubmitting = false;
+            
+            // Set today's date as default
+            const today = new Date();
+            entryDay.value = today.getDate();
+            entryMonth.value = today.getMonth();
+            entryYear.value = today.getFullYear();
+            
+            // Event listeners
+            document.getElementById('partValue').addEventListener('input', calculateTotal);
+            document.getElementById('taxValue').addEventListener('input', calculateTotal);
+
+            function calculateTotal() {
+                const partValue = parseFloat(document.getElementById('partValue').value) || 0;
+                const taxValue = parseFloat(document.getElementById('taxValue').value) || 0;
+                const total = partValue + taxValue;
+                document.getElementById('totalValue').value = total.toFixed(2);
+            }
+
+            document.getElementById('whatsapp').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 0) {
+                    value = value.match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+                    e.target.value = !value[2] ? `(${value[1]}` : `(${value[1]}) ${value[2]}${value[3] ? `-${value[3]}` : ''}`;
+                }
+            });
+
+            newOrderBtn.addEventListener('click', () => {
+                editOrderId.value = '';
+                newOrderModal.classList.remove('hidden');
+            });
+            
+            closeModalBtn.addEventListener('click', () => {
+                    // Limpar formulário
+    orderForm.reset();
+    checklistItems.innerHTML = '';
+    photosPreview.innerHTML = '';
+    editOrderId.value = '';
+    
+    // Remover qualquer input de fotos existentes
+    const existingPhotosInput = document.getElementById('existingPhotos');
+    if (existingPhotosInput) {
+        existingPhotosInput.remove();
+    }
+    
+                newOrderModal.classList.add('hidden');
+            });
+            
+cancelOrderBtn.addEventListener('click', () => {
+    // Limpar formulário
+    orderForm.reset();
+    checklistItems.innerHTML = '';
+    photosPreview.innerHTML = '';
+    editOrderId.value = '';
+    
+    // Remover qualquer input de fotos existentes
+    const existingPhotosInput = document.getElementById('existingPhotos');
+    if (existingPhotosInput) {
+        existingPhotosInput.remove();
+    }
+    
+    // Fechar modal
+    newOrderModal.classList.add('hidden');
+});
+            
+            closePdfModalBtn.addEventListener('click', () => {
+                pdfModal.classList.add('hidden');
+            });
+            
+            closeThermalModalBtn.addEventListener('click', () => {
+                thermalModal.classList.add('hidden');
+            });
+            
+            addChecklistItem.addEventListener('click', () => {
+                const newItem = document.createElement('div');
+                newItem.className = 'checklist-item flex items-center fade-in';
+                newItem.innerHTML = `
+                    <input type="text" placeholder="Novo item" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                checklistItems.appendChild(newItem);
+                newItem.querySelector('.delete-checklist-item').addEventListener('click', () => {
+                    newItem.remove();
+                });
+            });
+            
+photoUpload.addEventListener('change', function(e) {
+    const existingPhotos = photosPreview.querySelectorAll('img').length;
+    const newPhotos = e.target.files.length;
+
+    if (existingPhotos + newPhotos > 10) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Limite de Fotos',
+            text: 'Você pode adicionar no máximo 10 fotos. As fotos excedentes foram ignoradas.',
+            confirmButtonColor: '#f59e0b'
+        });
+
+        const validFiles = Array.from(e.target.files).slice(0, 10 - existingPhotos);
+        const dataTransfer = new DataTransfer();
+        validFiles.forEach(file => dataTransfer.items.add(file));
+        photoUpload.files = dataTransfer.files;
+    }
+
+    if (photoUpload.files.length === 0) return;
+
+    // Continuação do código original:
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'w-full text-center py-4';
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin text-amber-500"></i> Carregando fotos...';
+    photosPreview.appendChild(loadingDiv);
+
+    Array.from(photoUpload.files).forEach((file, index) => {
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            const photoPreview = document.createElement('div');
+            photoPreview.className = 'relative w-24 h-24 rounded-lg overflow-hidden fade-in';
+            photoPreview.innerHTML = `
+                <img src="${event.target.result}" class="w-full h-full object-cover">
+                <button type="button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            photosPreview.insertBefore(photoPreview, loadingDiv);
+
+            photoPreview.querySelector('button').addEventListener('click', () => {
+                photoPreview.remove();
+            });
+
+            if (index === photoUpload.files.length - 1) {
+                loadingDiv.remove();
+            }
+        };
+
+        reader.readAsDataURL(file);
+    });
+});
+
+            
+            // Form submission
+            orderForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+                if (isSubmitting) return;
+    isSubmitting = true;
+        // Exibir carregamento
+    Swal.fire({
+        title: 'Salvando...',
+        html: 'Aguarde enquanto a ordem está sendo processada.',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    saveOrderBtn.disabled = true;
+saveOrderBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> Salvando...`;
+
+
+                // Validate required fields
+                const requiredFields = [
+                    'clientName', 'whatsapp', 'deviceType', 'brand', 
+                    'model', 'entryDay', 'entryMonth', 'entryYear'
+                ];
+                
+                let isValid = true;
+                requiredFields.forEach(field => {
+                    const element = document.getElementById(field);
+                    if (!element.value) {
+                        element.classList.add('border-red-500');
+                        isValid = false;
+                    } else {
+                        element.classList.remove('border-red-500');
+                    }
+                });
+                
+                if (!isValid) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Campos obrigatórios',
+                        text: 'Por favor, preencha todos os campos obrigatórios marcados com *',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                    return;
+                }
+                    const orderId = editOrderId.value;
+    const method = orderId ? 'PUT' : 'POST';
+    const url = orderId ? `${API_URL}/api/ordens/${orderId}` : `${API_URL}/api/ordens`;
+    
+                
+try {
+    const formData = new FormData();
+    formData.append('clientName', document.getElementById('clientName').value);
+    formData.append('whatsapp', document.getElementById('whatsapp').value);
+    formData.append('deviceType', document.getElementById('deviceType').value);
+    formData.append('brand', document.getElementById('brand').value);
+    formData.append('model', document.getElementById('model').value);
+    formData.append('imei', document.getElementById('imei').value);
+    formData.append('clientReport', document.getElementById('clientReport').value || '');
+    formData.append('serviceDescription', document.getElementById('serviceDescription').value || '');
+    formData.append('replacedPart', document.getElementById('replacedPart').value || '');
+    formData.append('status', document.getElementById('status').value || 'pendente');
+    formData.append('partValue', parseFloat(document.getElementById('partValue').value) || 0);
+    formData.append('taxValue', parseFloat(document.getElementById('taxValue').value) || 0);
+    formData.append('totalValue', parseFloat(document.getElementById('totalValue').value) || 0);
+    formData.append('entryDay', document.getElementById('entryDay').value);
+    formData.append('entryMonth', document.getElementById('entryMonth').value);
+    formData.append('entryYear', document.getElementById('entryYear').value);
+
+    // Adicionar fotos existentes se estiver editando
+        if (orderId) {
+            const existingPhotosInput = document.getElementById('existingPhotos');
+            if (existingPhotosInput) {
+                formData.append('existingPhotos', existingPhotosInput.value);
+            }
+        }
+    
+    // Checklist como JSON string
+    const checklist = Array.from(checklistItems.querySelectorAll('input')).map(input => input.value).filter(item => item.trim() !== ''); // Remove itens vazios
+     formData.append('checklist', JSON.stringify(checklist));
+    
+    // Adicionar fotos
+  const photoInput = document.getElementById('photoUpload');
+        for (let i = 0; i < photoInput.files.length; i++) {
+            formData.append('fotos', photoInput.files[i]);
+        }
+        
+        const response = await fetch(url, {
+            method: method,
+            body: formData
+        });
+    
+if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Erro ao salvar ordem');
+}
+                    
+                    await loadOrders();
+                    renderOrders();
+
+                    Swal.close();
+                    
+                    newOrderModal.classList.add('hidden');
+                    orderForm.reset();
+                    checklistItems.innerHTML = '';
+                    photosPreview.innerHTML = '';
+                    editOrderId.value = '';
+                    entryDay.value = today.getDate();
+                    entryMonth.value = today.getMonth();
+                    entryYear.value = today.getFullYear();
+                                        saveOrderBtn.disabled = false;
+saveOrderBtn.innerHTML = `<i class="fas fa-save mr-2"></i> Salvar Ordem`;
+isSubmitting = false;
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: 'Ordem salva com sucesso!',
+                        confirmButtonColor: '#f59e0b'
+                    });
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: 'Ocorreu um erro ao salvar a ordem. Por favor, tente novamente.',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                    saveOrderBtn.disabled = false;
+saveOrderBtn.innerHTML = `<i class="fas fa-save mr-2"></i> Salvar Ordem`;
+isSubmitting = false;
+
+                }
+            });
+            
+            
+            monthFilter.addEventListener('change', function() {
+                renderOrders();
+            });
+            
+            // Load orders from server
+            async function loadOrders() {
+                try {
+                    const response = await fetch(`${API_URL}/api/ordens`);
+                    if (!response.ok) {
+                        throw new Error('Erro ao carregar ordens');
+                    }
+                    orders = await response.json();
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: 'Ocorreu um erro ao carregar as ordens. Por favor, recarregue a página.',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                }
+            }
+            
+function renderOrders() {
+    // Limpar completamente antes de renderizar
+    activeOrdersCarousel.innerHTML = '';
+    ordersCarousel.innerHTML = '';
+    
+    const selectedMonth = monthFilter.value;
+    let filteredOrders = [...orders];
+    
+    if (selectedMonth !== 'all') {
+        filteredOrders = orders.filter(order => {
+            const orderDate = new Date(order.data_entrada);
+            return orderDate.getMonth().toString() === selectedMonth;
+        });
+    }
+    
+    // Correção: Forma correta de remover duplicatas por ID
+    const uniqueOrdersMap = new Map();
+    filteredOrders.forEach(order => {
+        if (!uniqueOrdersMap.has(order.id)) {
+            uniqueOrdersMap.set(order.id, order);
+        }
+    });
+    const uniqueOrders = Array.from(uniqueOrdersMap.values());
+    
+    uniqueOrders.forEach(order => {
+        const orderCard = createOrderCard(order);
+        if (order.status === 'pendente') {
+            activeOrdersCarousel.appendChild(orderCard);
+        } else {
+            ordersCarousel.appendChild(orderCard);
+        }
+    });
+    
+    startPhotoCarousels();
+}
+            
+            function createOrderCard(order) {
+                const statusClass = {
+                    'pendente': 'status-pending',
+                    'andamento': 'status-progress',
+                    'concluido': 'status-completed',
+                    'cancelado': 'status-cancelled'
+                }[order.status];
+                
+                const statusText = {
+                    'pendente': 'Pendente',
+                    'andamento': 'Em Andamento',
+                    'concluido': 'Concluído',
+                    'cancelado': 'Cancelado'
+                }[order.status];
+                
+                const statusColor = {
+                    'pendente': 'bg-amber-500',
+                    'andamento': 'bg-blue-500',
+                    'concluido': 'bg-green-500',
+                    'cancelado': 'bg-red-500'
+                }[order.status];
+                
+                const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                const orderDate = new Date(order.data_entrada);
+                const orderMonth = monthNames[orderDate.getMonth()];
+                const orderDay = orderDate.getDate();
+                const orderYear = orderDate.getFullYear();
+                
+                const orderCard = document.createElement('div');
+                orderCard.className = `carousel-item w-72 flex-shrink-0 ${statusClass} bg-gray-700 rounded-lg p-4 shadow-md`;
+                orderCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-gray-200 truncate">${order.nome_cliente}</h3>
+                        <span class="text-xs ${statusColor} text-white px-2 py-1 rounded-full">${statusText}</span>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-1">${order.tipo_aparelho} ${order.marca} ${order.modelo}</p>
+                    <p class="text-xs text-gray-500 mb-3">${orderDay} de ${orderMonth} ${orderYear}</p>                                            
+                    ${order.fotos && order.fotos.length > 0 ? `
+                   <div class="photo-carousel mb-3">
+                       <div class="photo-carousel-inner">
+                           ${order.fotos.map(photo => `
+                               <div class="photo-carousel-item" style="background-image: url('${API_URL}/api/images/${photo}')"></div>
+                           `).join('')}
+                       </div>
+                       <div class="photo-carousel-nav">
+                           ${order.fotos.map((_, index) => `
+                               <div class="photo-carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></div>
+                           `).join('')}
+                       </div>
+                   </div>
+                   ` : '<div class="h-24 bg-gray-600 rounded-lg mb-3 flex items-center justify-center text-gray-400"><i class="fas fa-camera fa-2x"></i></div>'}
+
+                    <div class="text-sm text-gray-300 mb-2">
+                        <span class="font-medium">Serviço:</span> ${order.servico_descricao || 'Nenhum feito'}
+                    </div>
+                    <div class="text-sm text-gray-300 mb-3">
+                        <span class="font-medium">Peça:</span> ${order.peca_trocada || 'Nenhuma trocada'}
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-amber-500">R$ ${Number(order.valor_total || 0).toFixed(2)}</span>
+                        <div class="flex space-x-2">
+                            <button class="edit-order text-blue-400 hover:text-blue-300" data-id="${order.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="pdf-order text-green-400 hover:text-green-300" data-id="${order.id}">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            <div class="print-menu">
+                                <button class="print-menu-btn text-purple-400 hover:text-purple-300" data-id="${order.id}">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                                <div class="print-menu-dropdown">
+                                    <div class="print-menu-item" data-type="termica">
+                                        <i class="fas fa-receipt"></i> Impressão Térmica
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="delete-order text-red-400 hover:text-red-300" data-id="${order.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                orderCard.querySelector('.edit-order')?.addEventListener('click', () => editOrder(order.id));
+                orderCard.querySelector('.pdf-order')?.addEventListener('click', () => showPdfModal(order.id));
+                orderCard.querySelector('.delete-order')?.addEventListener('click', () => deleteOrder(order.id));
+                
+                const printMenuBtn = orderCard.querySelector('.print-menu-btn');
+                const printMenuDropdown = orderCard.querySelector('.print-menu-dropdown');
+                printMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    printMenuDropdown.classList.toggle('show');
+                });
+                
+                document.addEventListener('click', () => {
+                    printMenuDropdown.classList.remove('show');
+                });
+                
+                orderCard.querySelectorAll('.print-menu-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const printType = this.getAttribute('data-type');
+                        generateThermalPrint(order, printType);
+                        printMenuDropdown.classList.remove('show');
+                    });
+                });
+                
+                return orderCard;
+            }
+            
+async function editOrder(id) {
+    try {
+        const response = await fetch(`${API_URL}/api/ordens/${id}`);
+        if (!response.ok) {
+            throw new Error('Erro ao carregar ordem');
+        }
+        const order = await response.json();
+        
+        // Limpar completamente o formulário
+        orderForm.reset();
+        checklistItems.innerHTML = '';
+        photosPreview.innerHTML = '';
+        editOrderId.value = '';
+        
+        // Remover qualquer input de fotos existentes anteriormente
+        const existingPhotosInput = document.getElementById('existingPhotos');
+        if (existingPhotosInput) {
+            existingPhotosInput.remove(); // CORREÇÃO: apenas remover, não usar formData aqui
+        }
+        
+        // Set edit mode
+        editOrderId.value = order.id;
+        
+        // Fill form with order data
+        document.getElementById('clientName').value = order.nome_cliente;
+        document.getElementById('whatsapp').value = order.whatsapp;
+        document.getElementById('deviceType').value = order.tipo_aparelho;
+        document.getElementById('brand').value = order.marca;
+        document.getElementById('model').value = order.modelo;
+        document.getElementById('imei').value = order.imei_serial;
+        document.getElementById('clientReport').value = order.relato_cliente || '';
+        document.getElementById('serviceDescription').value = order.servico_descricao || '';
+        document.getElementById('replacedPart').value = order.peca_trocada || '';
+        document.getElementById('status').value = order.status;
+        
+        // Fill date
+        const orderDate = new Date(order.data_entrada);
+        document.getElementById('entryDay').value = orderDate.getDate();
+        document.getElementById('entryMonth').value = orderDate.getMonth();
+        document.getElementById('entryYear').value = orderDate.getFullYear();
+        
+        // Fill checklist
+        if (order.checklist && order.checklist.length > 0) {
+            order.checklist.forEach(item => {
+                const newItem = document.createElement('div');
+                newItem.className = 'checklist-item flex items-center fade-in';
+                newItem.innerHTML = `
+                    <input type="text" value="${item}" class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                checklistItems.appendChild(newItem);
+                
+                newItem.querySelector('.delete-checklist-item').addEventListener('click', () => {
+                    newItem.remove();
+                });
+            });
+        }
+        
+        // Fill values
+        document.getElementById('partValue').value = order.valor_peca || '';
+        document.getElementById('taxValue').value = order.valor_taxa || '';
+        document.getElementById('totalValue').value = order.valor_total || '';
+        
+        // Fill photos
+        if (order.fotos && order.fotos.length > 0) {
+            // Criar um campo oculto para armazenar as fotos existentes
+            const existingPhotosInput = document.createElement('input');
+            existingPhotosInput.type = 'hidden';
+            existingPhotosInput.id = 'existingPhotos';
+            existingPhotosInput.name = 'existingPhotos';
+            existingPhotosInput.value = JSON.stringify(order.fotos);
+            orderForm.appendChild(existingPhotosInput);
+            
+            order.fotos.forEach(photo => {
+                const photoPreview = document.createElement('div');
+                photoPreview.className = 'relative w-24 h-24 rounded-lg overflow-hidden';
+                photoPreview.innerHTML = `
+                    <img src="${API_URL}/api/images/${photo}" class="w-full h-full object-cover">
+                    <button type="button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                photosPreview.appendChild(photoPreview);
+                
+                photoPreview.querySelector('button').addEventListener('click', () => {
+                    photoPreview.remove();
+                    // Atualizar a lista de fotos existentes
+                    const updatedPhotos = JSON.parse(existingPhotosInput.value).filter(p => p !== photo);
+                    existingPhotosInput.value = JSON.stringify(updatedPhotos);
+                });
+            });
+        }
+        
+        // Open modal
+        newOrderModal.classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro',
+            text: 'Ocorreu um erro ao carregar a ordem. Por favor, tente novamente.',
+            confirmButtonColor: '#f59e0b'
+        });
+    }
+}
+            
+            //    ========API base URL=========
+            const API_URL = 'https://backend-sos-cases-store.up.railway.app';
+
+            async function deleteOrder(id) {
+                try {
+                    const result = await Swal.fire({
+                        title: 'Tem certeza?',
+                        text: 'Você não poderá reverter isso!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#f59e0b',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sim, excluir!',
+                        cancelButtonText: 'Cancelar'
+                    });
+                    
+                    if (result.isConfirmed) {
+                        const response = await fetch(`${API_URL}/api/ordens/${id}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Erro ao excluir ordem');
+                        }
+                        
+                        await loadOrders();
+                        renderOrders();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Excluído!',
+                            text: 'A ordem foi excluída com sucesso.',
+                            confirmButtonColor: '#f59e0b'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro',
+                        text: 'Ocorreu um erro ao excluir a ordem. Por favor, tente novamente.',
+                        confirmButtonColor: '#f59e0b'
+                    });
+                }
+            }
+            
+function showPdfModal(orderId) {
+    const order = orders.find(o => o.id == orderId);
+    if (!order) return;
+    
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const orderDate = new Date(order.data_entrada);
+    const orderMonth = monthNames[orderDate.getMonth()];
+    const orderDay = orderDate.getDate();
+    const orderYear = orderDate.getFullYear();
+    
+    // Agrupar fotos em linhas de 5
+    let groupedPhotos = [];
+    if (order.fotos && order.fotos.length > 0) {
+        for (let i = 0; i < order.fotos.length; i += 5) {
+            groupedPhotos.push(order.fotos.slice(i, i + 5));
+        }
+    }
+    
+    pdfContent.innerHTML = `
+        <div class="pdf-header">
+            <div class="pdf-title">ORDEM DE SERVIÇO</div>
+            <div class="pdf-subtitle">S.O.S - SISTEMA ORDENS DE SERVIÇOS</div>
+        </div>                                    
+        <div class="pdf-section">
+            <div class="pdf-section-title">DADOS DO CLIENTE</div>
+            <div class="pdf-row">
+                <div class="pdf-label">Nome:</div>
+                <div class="pdf-value">${order.nome_cliente}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">Telefone:</div>
+                <div class="pdf-value">${order.whatsapp}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">Data:</div>
+                <div class="pdf-value">${orderDay} de ${orderMonth} de ${orderYear}</div>
+            </div>
+        </div>                            
+        <div class="pdf-section">
+            <div class="pdf-section-title">DADOS DO APARELHO</div>
+            <div class="pdf-row">
+                <div class="pdf-label">Tipo:</div>
+                <div class="pdf-value">${order.tipo_aparelho}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">Marca:</div>
+                <div class="pdf-value">${order.marca}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">Modelo:</div>
+                <div class="pdf-value">${order.modelo}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">IMEI/Serial:</div>
+                <div class="pdf-value">${order.imei_serial || 'Não informado'}</div>
+            </div>
+        </div>                           
+        <div class="pdf-section">
+            <div class="pdf-section-title">RELATO DO CLIENTE</div>
+            <div class="pdf-value">${order.relato_cliente || 'Nenhum relato fornecido'}</div>
+        </div>                       
+        <div class="pdf-section">
+            <div class="pdf-section-title">SERVIÇO A SER REALIZADO</div>
+            <div class="pdf-value">${order.servico_descricao || 'Nenhum serviço feito'}</div>
+        </div>                            
+        <div class="pdf-section">
+            <div class="pdf-section-title">PEÇA TROCADA</div>
+            <div class="pdf-value">${order.peca_trocada || 'Nenhuma peça trocada'}</div>
+        </div>                          
+        <div class="pdf-section">
+            <div class="pdf-section-title">CHECKLIST</div>
+            <div class="pdf-checklist">
+                ${order.checklist && order.checklist.length > 0 ? 
+                    order.checklist.map(item => `
+                        <div class="pdf-checklist-item">${item}</div>
+                    `).join('') : 
+                    '<div class="pdf-checklist-item">Nenhum item no checklist</div>'}
+            </div>
+        </div>                            
+        <div class="pdf-section">
+            <div class="pdf-section-title">VALORES</div>
+            <div class="pdf-row">
+                <div class="pdf-label">Peça:</div>
+                <div class="pdf-value">R$ ${order.valor_peca?.toFixed(2) || '0,00'}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">Taxa:</div>
+                <div class="pdf-value">R$ ${order.valor_taxa?.toFixed(2) || '0,00'}</div>
+            </div>
+            <div class="pdf-row">
+                <div class="pdf-label">Total:</div>
+                <div class="pdf-value">R$ ${order.valor_total?.toFixed(2) || '0,00'}</div>
+            </div>
+        </div>                            
+        ${groupedPhotos.length > 0 ? `
+        <div class="pdf-section">
+            <div class="pdf-section-title">FOTOS</div>
+            ${groupedPhotos.map(group => `
+                <div class="pdf-photos">
+                    ${group.map(photo => `
+                        <img src="${API_URL}/api/images/${photo}" class="pdf-photo" style="width:100px;height:100px;object-fit:cover;border:1px solid #ddd;">
+                    `).join('')}
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}                            
+        <div class="pdf-footer">
+            <div class="pdf-signature">Assinatura do Cliente</div>
+            <div class="pdf-signature">Assinatura do Técnico</div>
+        </div>
+    `;
+    
+            // Show PDF modal
+            pdfModal.classList.remove('hidden');
+
+            // Set up PDF download button
+            downloadPdfBtn.onclick = function() {
+                generatePdf(order);
+            };
+
+            // Set up print button
+            printPdfBtn.onclick = function() {
+                window.print();
+            };
+        }
+
+async function addImagesToPdf(doc, order) {
+    if (!order.fotos || order.fotos.length === 0) return;
+    
+    doc.addPage();
+    doc.setFontSize(14);
+    doc.text('FOTOS DO APARELHO', 20, 20);
+    
+    let yPosition = 30;
+    const photoSize = 50;
+    const margin = 10;
+    
+    for (let i = 0; i < order.fotos.length; i++) {
+        const photoUrl = `${API_URL}/api/images/${order.fotos[i]}`;
+        
+        try {
+            // Criar um elemento img temporário
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.src = photoUrl;
+            
+            // Esperar o carregamento da imagem
+            await new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve; // Continua mesmo com erro
+            });
+            
+            // Criar canvas e desenhar a imagem
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            // Adicionar ao PDF
+            const imgData = canvas.toDataURL('image/jpeg');
+            doc.addImage(imgData, 'JPEG', 20, yPosition, photoSize, photoSize);
+            
+            yPosition += photoSize + margin;
+            if (yPosition > 250) {
+                doc.addPage();
+                yPosition = 20;
+            }
+        } catch (error) {
+            console.error(`Erro ao processar foto ${order.fotos[i]}:`, error);
+            doc.text(`[Foto ${i+1}]`, 20, yPosition);
+            yPosition += 20;
+        }
+    }
+}
+            
+async function getImageBase64WithType(url) {
+  const response = await fetch(url);
+  const blob = await response.blob();
+
+  const mime = blob.type; // Ex: image/jpeg
+  const format = mime.split('/')[1].toUpperCase(); // Ex: JPEG, PNG, WEBP
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve({ base64: reader.result, format });
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+
+ async function generatePdf(order) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+
+    // Configurações iniciais
+    doc.setFontSize(16);
+    doc.setTextColor(40);
+    doc.text('ORDEM DE SERVIÇO', 105, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text('SOS - Sistema Ordens de Serviço', 105, 20, { align: 'center' });
+    doc.setDrawColor(100);
+    doc.line(15, 23, 195, 23);
+
+    // Posição Y inicial
+    let yPosition = 30;
+
+    // Dados do Cliente
+    doc.setFontSize(12);
+    doc.text('DADOS DO CLIENTE', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    doc.text(`Nome: ${order.nome_cliente}`, 15, yPosition);
+    yPosition += 5;
+    doc.text(`Telefone: ${order.whatsapp}`, 15, yPosition);
+    yPosition += 5;
+    
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                        "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const orderDate = new Date(order.data_entrada);
+    doc.text(`Data: ${orderDate.getDate()} de ${monthNames[orderDate.getMonth()]} de ${orderDate.getFullYear()}`, 15, yPosition);
+    yPosition += 10;
+
+    // Dados do Aparelho
+    doc.setFontSize(12);
+    doc.text('DADOS DO APARELHO', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    doc.text(`Tipo: ${order.tipo_aparelho}`, 15, yPosition);
+    yPosition += 5;
+    doc.text(`Marca: ${order.marca}`, 15, yPosition);
+    yPosition += 5;
+    doc.text(`Modelo: ${order.modelo}`, 15, yPosition);
+    yPosition += 5;
+    doc.text(`IMEI/Serial: ${order.imei_serial || 'Não informado'}`, 15, yPosition);
+    yPosition += 10;
+
+    // Relato do Cliente (texto quebrado em linhas)
+    doc.setFontSize(12);
+    doc.text('RELATO DO CLIENTE', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    const clientReportLines = doc.splitTextToSize(order.relato_cliente || 'Nenhum relato fornecido', 180);
+    clientReportLines.forEach(line => {
+        if (yPosition > 250) return; // Evitar estourar a página
+        doc.text(line, 15, yPosition);
+        yPosition += 5;
+    });
+    yPosition += 5;
+
+    // Serviço (texto quebrado em linhas)
+    doc.setFontSize(12);
+    doc.text('SERVIÇO A SER REALIZADO', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    const serviceLines = doc.splitTextToSize(order.servico_descricao || 'Nenhum serviço descrito', 180);
+    serviceLines.forEach(line => {
+        if (yPosition > 250) return;
+        doc.text(line, 15, yPosition);
+        yPosition += 5;
+    });
+    yPosition += 5;
+
+    // Peça Trocada
+    doc.setFontSize(12);
+    doc.text('PEÇA TROCADA', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    doc.text(order.peca_trocada || 'Nenhuma peça trocada', 15, yPosition);
+    yPosition += 10;
+
+    // Checklist (limitado para caber na página)
+    doc.setFontSize(12);
+    doc.text('CHECKLIST', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    
+    if (order.checklist && order.checklist.length > 0) {
+        order.checklist.slice(0, 5).forEach(item => { // Limitar a 5 itens
+            if (yPosition > 250) return;
+            doc.text(`✓ ${item}`, 20, yPosition);
+            yPosition += 5;
+        });
+        if (order.checklist.length > 5) {
+            doc.text(`✓ +${order.checklist.length - 5} itens...`, 20, yPosition);
+            yPosition += 5;
+        }
+    } else {
+        doc.text('✓ Nenhum item no checklist', 20, yPosition);
+        yPosition += 5;
+    }
+    yPosition += 10;
+
+    // Valores
+    doc.setFontSize(12);
+    doc.text('VALORES', 15, yPosition);
+    doc.setFontSize(10);
+    yPosition += 7;
+    doc.text(`Peça: R$ ${order.valor_peca?.toFixed(2) || '0,00'}`, 15, yPosition);
+    yPosition += 5;
+    doc.text(`Taxa: R$ ${order.valor_taxa?.toFixed(2) || '0,00'}`, 15, yPosition);
+    yPosition += 5;
+    doc.text(`Total: R$ ${order.valor_total?.toFixed(2) || '0,00'}`, 15, yPosition);
+    yPosition += 15;
+
+    // Fotos (se houver espaço)
+if (order.fotos && order.fotos.length > 0 && yPosition < 200) {
+    doc.setFontSize(12);
+    doc.text('FOTOS', 15, yPosition);
+    yPosition += 7;
+
+    const photoSize = 30;
+    let xPosition = 15;
+
+    for (const photo of order.fotos.slice(0, 4)) {
+        const photoUrl = `${API_URL}/api/images/${photo}`;
+        try {
+            const { base64, format } = await getImageBase64WithType(photoUrl);
+            doc.addImage(base64, format, xPosition, yPosition, photoSize, photoSize);
+            xPosition += photoSize + 5;
+
+            if (xPosition + photoSize > 180) {
+                xPosition = 15;
+                yPosition += photoSize + 5;
+            }
+        } catch (error) {
+            console.error(`Erro ao carregar imagem ${photoUrl}:`, error);
+        }
+    }
+
+    if (order.fotos.length > 4) {
+        doc.setFontSize(10);
+        doc.text(`+${order.fotos.length - 4} fotos...`, xPosition, yPosition + photoSize / 2);
+    }
+
+    yPosition += photoSize + 10;
+}
+
+
+    // Assinaturas no rodapé
+    doc.setFontSize(10);
+    doc.text('Assinatura do Cliente', 40, 270);
+    doc.text('Assinatura do Técnico', 140, 270);
+    doc.line(40, 275, 80, 275);
+    doc.line(140, 275, 180, 275);
+
+    // Salvar o PDF
+    doc.save(`Ordem_Servico_${order.nome_cliente.replace(/\s+/g, '_')}.pdf`);
+}
+            
+function generateThermalPrint(order, type) {
+    const orderDate = new Date(order.data_entrada);
+    const orderDay = orderDate.getDate();
+    const orderMonth = orderDate.getMonth() + 1;
+    const orderYear = orderDate.getFullYear();
+
+    thermalContent.innerHTML = `
+        <div class="thermal-header">
+            <div style="font-size: 16px; font-weight: bold;">ORDEM DE SERVIÇO</div>
+            <div style="font-size: 14px;">Impressão Térmica</div>
+            <div style="font-size: 14px;">Nº ${order.id}</div>
+        </div>                           
+        <div class="thermal-info coupon-text">
+            <div><strong>Cliente:</strong> ${order.nome_cliente}</div>
+            <div><strong>Data:</strong> ${orderDay}/${orderMonth}/${orderYear}</div>
+        </div>                             
+        <div class="thermal-divider"></div>                             
+        <div class="thermal-info coupon-text">
+            <div><strong>Aparelho:</strong> ${order.tipo_aparelho}</div>
+            <div><strong>Marca:</strong> ${order.marca}</div>
+            <div><strong>Modelo:</strong> ${order.modelo}</div>
+            ${order.imei_serial ? `<div><strong>IMEI/Serial:</strong> ${order.imei_serial}</div>` : ''}
+        </div>                              
+        <div class="thermal-divider"></div>                              
+        <div class="thermal-info coupon-text">
+            <div><strong>Serviço:</strong></div>
+            <div>${order.servico_descricao || 'Nenhum serviço descrito'}</div>
+        </div>                              
+        <div class="thermal-divider"></div>
+                                        
+        <div class="thermal-info coupon-text">
+            <div><strong>Peça trocada:</strong></div>
+            <div>${order.peca_trocada || 'Nenhuma trocada'}</div>
+        </div>                             
+        <div class="thermal-divider"></div>                             
+        <div class="thermal-info coupon-text">
+            <div><strong>Checklist:</strong></div>
+            <div class="thermal-checklist">
+                ${order.checklist && order.checklist.length > 0 ? 
+                    order.checklist.map(item => `
+                        <div class="thermal-checklist-item coupon-text">✓ ${item}</div>
+                    `).join('') : 
+                    '<div class="thermal-checklist-item coupon-text">✓ Nenhum item no checklist</div>'}
+            </div>
+        </div>                           
+        <div class="thermal-divider"></div>                             
+        <div class="thermal-values coupon-text">
+            <div><strong>Valor peça:</strong> R$ ${order.valor_peca?.toFixed(2) || '0,00'}</div>
+            <div><strong>Taxa serviço:</strong> R$ ${order.valor_taxa?.toFixed(2) || '0,00'}</div>
+            <div><strong>Total:</strong> R$ ${order.valor_total?.toFixed(2) || '0,00'}</div>
+        </div>                            
+        <div class="thermal-divider"></div>                              
+        <div class="thermal-footer coupon-text">
+            <div>Assinatura do Cliente</div>
+            <div>______________________________</div>
+            <div>SOS - Sistema Ordens de Serviço</div>
+            <div>${orderDay}/${orderMonth}/${orderYear}</div>
+        </div>
+    `;
+    
+            // Show thermal modal
+            thermalModal.classList.remove('hidden');
+
+            // Set up thermal print button
+            printThermalBtn.onclick = function() {
+                window.print();
+            };
+
+
+downloadThermalBtn.onclick = function() {
+    const { jsPDF } = window.jspdf;
+    
+    // Criar PDF com dimensões de impressora térmica (80mm de largura, altura automática)
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [80, 200] // 80mm de largura, altura inicial de 200mm (será ajustada)
+    });
+    
+    // Configurar margens e fonte menores
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
+    // Adicionar conteúdo manualmente para melhor controle
+    const margin = 2;
+    let y = 10;
+    
+    // Cabeçalho
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('ORDEM DE SERVIÇO', 40, y, { align: 'center' });
+    y += 5;
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('Impressão Térmica', 40, y, { align: 'center' });
+    y += 5;
+    doc.text(`Nº ${order.id}`, 40, y, { align: 'center' });
+    y += 8;
+    
+    // Informações do cliente
+    doc.text(`Cliente: ${order.nome_cliente}`, margin, y);
+    y += 5;
+    doc.text(`Data: ${orderDay}/${orderMonth}/${orderYear}`, margin, y);
+    y += 8;
+    
+    // Linha divisória
+    doc.line(margin, y, 80 - margin, y);
+    y += 5;
+    
+    // Informações do aparelho
+    doc.text(`Aparelho: ${order.tipo_aparelho}`, margin, y);
+    y += 5;
+    doc.text(`Marca: ${order.marca}`, margin, y);
+    y += 5;
+    doc.text(`Modelo: ${order.modelo}`, margin, y);
+    if (order.imei_serial) {
+        y += 5;
+        doc.text(`IMEI/Serial: ${order.imei_serial}`, margin, y);
+    }
+    y += 8;
+    
+    // Linha divisória
+    doc.line(margin, y, 80 - margin, y);
+    y += 5;
+    
+    // Serviço
+    doc.text(`Serviço:`, margin, y);
+    y += 5;
+    const serviceLines = doc.splitTextToSize(order.servico_descricao || 'Nenhum serviço descrito', 76);
+    serviceLines.forEach(line => {
+        doc.text(line, margin + 2, y);
+        y += 5;
+    });
+    y += 5;
+    
+    // Linha divisória
+    doc.line(margin, y, 80 - margin, y);
+    y += 5;
+    
+    // Peça trocada
+    doc.text(`Peça trocada:`, margin, y);
+    y += 5;
+    const partLines = doc.splitTextToSize(order.peca_trocada || 'Nenhuma trocada', 76);
+    partLines.forEach(line => {
+        doc.text(line, margin + 2, y);
+        y += 5;
+    });
+    y += 5;
+    
+    // Linha divisória
+    doc.line(margin, y, 80 - margin, y);
+    y += 5;
+    
+    // Checklist
+    doc.text(`Checklist:`, margin, y);
+    y += 5;
+    if (order.checklist && order.checklist.length > 0) {
+        order.checklist.forEach(item => {
+            doc.text(`✓ ${item}`, margin + 2, y);
+            y += 5;
+        });
+    } else {
+        doc.text(`✓ Nenhum item no checklist`, margin + 2, y);
+        y += 5;
+    }
+    y += 5;
+    
+    // Linha divisória
+    doc.line(margin, y, 80 - margin, y);
+    y += 5;
+    
+    // Valores
+    doc.text(`Valor peça: R$ ${order.valor_peca?.toFixed(2) || '0,00'}`, margin, y);
+    y += 5;
+    doc.text(`Taxa serviço: R$ ${order.valor_taxa?.toFixed(2) || '0,00'}`, margin, y);
+    y += 5;
+    doc.text(`Total: R$ ${order.valor_total?.toFixed(2) || '0,00'}`, margin, y);
+    y += 8;
+    
+    // Linha divisória
+    doc.line(margin, y, 80 - margin, y);
+    y += 5;
+    
+    // Rodapé
+    doc.text('Assinatura do Cliente', margin, y);
+    y += 10;
+    doc.line(margin, y - 5, 40, y - 5);
+    doc.text('SOS - Sistema Ordens de Serviço', margin, y);
+    y += 5;
+    doc.text(`${orderDay}/${orderMonth}/${orderYear}`, margin, y);
+    
+    // Salvar o PDF
+    doc.save(`Ordem_Servico_${order.id}_termica.pdf`);
+};
+    
+}
+            
+            function startPhotoCarousels() {
+                document.querySelectorAll('.photo-carousel').forEach(carousel => {
+                    const inner = carousel.querySelector('.photo-carousel-inner');
+                    const items = carousel.querySelectorAll('.photo-carousel-item');
+                    const dots = carousel.querySelectorAll('.photo-carousel-dot');
+                    
+                    if (items.length <= 1) return; // No need for carousel with 1 or 0 items
+                    
+                    let currentIndex = 0;
+                    
+                    // Set initial position
+                    inner.style.transform = `translateX(-${currentIndex * 100}%)`;
+                    
+                    // Auto-scroll every 3 seconds
+                    const interval = setInterval(() => {
+                        currentIndex = (currentIndex + 1) % items.length;
+                        inner.style.transform = `translateX(-${currentIndex * 100}%)`;
+                        
+                        // Update dots
+                        dots.forEach((dot, index) => {
+                            dot.classList.toggle('active', index === currentIndex);
+                        });
+                    }, 3000);
+                    
+                    // Pause on hover
+                    carousel.addEventListener('mouseenter', () => {
+                        clearInterval(interval);
+                    });
+                    
+                    // Resume when mouse leaves
+                    carousel.addEventListener('mouseleave', () => {
+                        startPhotoCarousels(); // Restart all carousels
+                    });
+                    
+                    // Dot navigation
+                    dots.forEach(dot => {
+                        dot.addEventListener('click', () => {
+                            currentIndex = parseInt(dot.dataset.index);
+                            inner.style.transform = `translateX(-${currentIndex * 100}%)`;
+                            
+                            // Update dots
+                            dots.forEach((d, index) => {
+                                d.classList.toggle('active', index === currentIndex);
+                            });
+                        });
+                    });
+                });
+            }
+            
+            // Initial load
+            loadOrders().then(renderOrders);
+        });
+    </script>
+</body>
+</html>
