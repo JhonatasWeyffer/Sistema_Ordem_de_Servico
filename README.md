@@ -31,9 +31,11 @@ Permite registrar, listar, editar e excluir ordens, incluindo upload de fotos e 
 
 O **frontend** está na pasta `/public` e é um site estático conectado ao backend via **fetch API**.
 
-📂public/
-├── index.html
-└── logo.png
+```
+📂public/ 
+├── index.html 
+└── logo.png 
+```
 
 Gera PDFs e recibos térmicos com jsPDF e html2canvas
 Exibe as ordens puxadas do backend via fetch('http://localhost:3000/api/ordens')
@@ -65,6 +67,7 @@ O backend é hospedado na [Railway.app](https://railway.app), que permite deploy
 
 ### 🗃 Estrutura de Arquivos do Backend — Node.js
 
+```
 📁 backend/
 ├── 📁 uploads/ → imagens enviadas pelo Multer
 ├── .env (versionado para exemplo)
@@ -72,7 +75,7 @@ O backend é hospedado na [Railway.app](https://railway.app), que permite deploy
 ├── package.json
 ├── package-lock.json
 └── server.js
-
+```
 
 **Uploads**
 - Armazenados em `/uploads`
@@ -149,16 +152,12 @@ http://localhost:3000
 ✅ Cálculo automático de valores (peça + taxa)
 
 ---
-## 📸 Telas (opcional)
+## 📸 Telas
 
-Se quiser adicionar prints:
-
-```
 ![Tela principal](docs/tela-principal.png)
 ![Cadastro](docs/cadastro.png)
 ![PDF](docs/pdf.png)
 ![Termica](docs/termica.png)
-```
 
 ---
 
