@@ -71,7 +71,7 @@ pool.getConnection()
   });
 
 // Criação das tabelas (executar apenas uma vez)
-  async function createTables() {
+ /* async function createTables() {
     try {
       const conn = await pool.getConnection();
       
@@ -122,7 +122,7 @@ pool.getConnection()
     } catch (err) {
       console.error('Erro ao criar tabelas:', err);
     }
-  }  
+  }  */
 
 //==============================
 //        ROTAS DA API
@@ -393,6 +393,6 @@ app.get('/', (req, res) => {
 
 // Iniciar o servidor
 app.listen(port, async () => {
-  await createTables(); // <===== Desligar com "//" ao criar as tabelas
+  //await createTables(); // <===== Desligar com "//" ao criar as tabelas
   console.log(`Servidor rodando na porta ${port}`);
 }); 
