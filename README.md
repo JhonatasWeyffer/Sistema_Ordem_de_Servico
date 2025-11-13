@@ -162,4 +162,4 @@ http://localhost:3000
 ---
 
 ## 📜 Licença
-**Autor:** [Jônatas Weyffer](https://github.com/JhonatasWeyffer)
+**Desenvolvedor:** © 2025 [Jônatas Weyffer](https://github.com/JhonatasWeyffer)
