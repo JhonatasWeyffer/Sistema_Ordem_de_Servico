@@ -12,7 +12,7 @@ Permite registrar, listar, editar e excluir ordens, incluindo upload de fotos e 
 ├── 📁 backend/
 │ ├── 📁 uploads/
 │ ├── 📁 node_modules/
-│ ├── .env
+│ ├── .env.example
 │ ├── .gitignore
 │ ├── package.json
 │ ├── package-lock.json
